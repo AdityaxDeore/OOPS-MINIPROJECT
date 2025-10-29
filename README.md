@@ -54,9 +54,18 @@ java MineStake
 
 ```
 MineStake.java          # Main game file with all classes
+CODE_EXPLANATION.md    # Detailed line-by-line code explanation
 game_log.txt           # Auto-generated game history log
 README.md              # This file
 ```
+
+## 📖 Documentation
+
+- **[CODE_EXPLANATION.md](CODE_EXPLANATION.md)** - Complete line-by-line explanation of every concept, perfect for:
+  - Understanding the logic behind each method
+  - Preparing for VIVA questions
+  - Teaching/presenting the project to professors
+  - Deep-diving into OOP concepts implementation
 
 ## 🎲 Example Gameplay
 
