@@ -354,45 +354,587 @@ private void initializeGrid() {
 
 ---
 
-### Mine Placement Algorithm
+### Mine Placement Algorithms - Automatic Selection
+
+Our game **automatically selects** one of **THREE different algorithms** for placing mines each round, adding variety and unpredictability to gameplay!
+
+**Available Algorithms:**
+1. **N-Queens Algorithm** - Strategic placement with no two mines in same row/column/diagonal
+2. **Minimum Distance Algorithm** - Ensures mines are spread out with minimum distance
+3. **Random Placement** - Completely random distribution
+
+---
+
+#### Main Mine Placement Method with Auto-Selection
 
 ```java
 public void placeMines() {
     Random random = new Random();
-    int placedMines = 0;
+    int choice = random.nextInt(3) + 1; // Randomly select 1, 2, or 3
+    
+    System.out.println("\nRandomly selecting mine placement algorithm...");
+    
+    switch (choice) {
+        case 1:
+            System.out.println("Selected: N-Queens Algorithm");
+            placeMinesNQueens();
+            break;
+        case 2:
+            System.out.println("Selected: Minimum Distance Algorithm");
+            placeMinesMinDistance();
+            break;
+        case 3:
+            System.out.println("Selected: Random Placement");
+            placeMinesRandom();
+            break;
+    }
+}
+```
 
-    while (placedMines < this.mineCount) {
-        int row = random.nextInt(this.size);
-        int col = random.nextInt(this.size);
+### Line-by-Line Explanation:
 
-        if (!this.grid[row][col].isMine()) {
+**Line 2:** `Random random = new Random();`
+- Creates Random object for generating random numbers
+- Used to select which algorithm to use
+
+**Line 3:** `int choice = random.nextInt(3) + 1;`
+- `random.nextInt(3)` generates 0, 1, or 2
+- Adding `+ 1` converts to 1, 2, or 3
+- **Equal probability:** Each algorithm has 33.33% (1/3) chance
+- **Example:** 
+  - `nextInt(3)` returns 0 → choice = 1 (N-Queens)
+  - `nextInt(3)` returns 1 → choice = 2 (Min Distance)
+  - `nextInt(3)` returns 2 → choice = 3 (Random)
+
+**Line 5:** `System.out.println("\nRandomly selecting mine placement algorithm...");`
+- Informs player that algorithm is being chosen automatically
+- Adds anticipation to the game
+
+**Lines 7-20:** Switch Statement
+- Routes to appropriate algorithm based on random choice
+- Displays which algorithm was selected for transparency
+- Calls the specific placement method
+
+**Why Automatic Selection?**
+- ✅ **Game Variety** - Every round feels different
+- ✅ **Unpredictable** - Players can't predict mine patterns
+- ✅ **Fair Play** - No algorithm is "easier" to exploit
+- ✅ **Educational** - Demonstrates all three algorithms in use
+
+---
+
+#### Algorithm 1: N-Queens Method
+
+```java
+private void placeMinesNQueens() {
+    Random random = new Random();
+    
+    // Step 1: Place first mine randomly
+    int firstRow = random.nextInt(this.size);
+    int firstCol = random.nextInt(this.size);
+    this.grid[firstRow][firstCol].setMine(true);
+    
+    // Step 2: Use N-Queens algorithm for remaining mines
+    int remainingMines = this.mineCount - 1;
+    ArrayList<int[]> placedMines = new ArrayList<>();
+    placedMines.add(new int[]{firstRow, firstCol});
+    placeRemainingMinesNQueens(remainingMines, 0, placedMines);
+}
+```
+
+### Line-by-Line Explanation:
+
+**Line 1:** `Random random = new Random();`
+- Creates Random object for generating random numbers
+
+**Lines 4-5:** First mine placement
+```java
+int firstRow = random.nextInt(this.size);
+int firstCol = random.nextInt(this.size);
+```
+- `random.nextInt(this.size)` generates number from 0 to (size-1)
+- Example: For 3×3 grid, generates 0, 1, or 2
+- Creates truly random starting position each game
+
+**Line 6:** `this.grid[firstRow][firstCol].setMine(true);`
+- Places first mine at random position
+- Calls `setMine()` method from Tile class
+
+**Line 9:** `int remainingMines = this.mineCount - 1;`
+- Calculates how many more mines to place
+- Example: If player chose 5 mines, remaining = 4
+
+**Lines 10-11:** Initialize tracking list
+```java
+ArrayList<int[]> placedMines = new ArrayList<>();
+placedMines.add(new int[]{firstRow, firstCol});
+```
+- Creates list to store all mine positions
+- `int[]` stores [row, column] as a pair
+- Adds first mine position to the list
+- Example: `[2, 1]` means mine at row 2, column 1
+
+**Line 12:** `placeRemainingMinesNQueens(remainingMines, 0, placedMines);`
+- Calls recursive N-Queens algorithm
+- Passes: number of mines left, starting row (0), and placed mines list
+
+---
+
+#### Step 2: N-Queens Recursive Algorithm
+
+```java
+private boolean placeRemainingMinesNQueens(int minesToPlace, int row, ArrayList<int[]> placedMines) {
+    if (minesToPlace == 0) {
+        return true; // All mines placed successfully
+    }
+    
+    if (row >= this.size) {
+        return false; // Reached end of board, backtrack
+    }
+    
+    // Try placing mine in each column of current row
+    for (int col = 0; col < this.size; col++) {
+        if (isSafeNQueens(row, col, placedMines) && !this.grid[row][col].isMine()) {
+            // Place mine
             this.grid[row][col].setMine(true);
-            placedMines++;
+            placedMines.add(new int[]{row, col});
+            
+            // Recursively place remaining mines
+            if (placeRemainingMinesNQueens(minesToPlace - 1, row + 1, placedMines)) {
+                return true;
+            }
+            
+            // Backtrack if placement didn't work
+            this.grid[row][col].setMine(false);
+            placedMines.remove(placedMines.size() - 1);
+        }
+    }
+    
+    // Try next row without placing in current row
+    return placeRemainingMinesNQueens(minesToPlace, row + 1, placedMines);
+}
+```
+
+### Detailed Line-by-Line Logic:
+
+**Lines 2-4:** Base Case #1 - Success
+```java
+if (minesToPlace == 0) {
+    return true;
+}
+```
+- **When:** All mines have been placed
+- **Action:** Return true (success!)
+- **Example:** Started with 4 mines to place, now 0 left → Done!
+
+**Lines 6-8:** Base Case #2 - Backtrack
+```java
+if (row >= this.size) {
+    return false;
+}
+```
+- **When:** Reached past last row of board
+- **Action:** Return false (need to backtrack)
+- **Example:** On 3×3 board, if row = 3 (rows are 0,1,2) → Out of bounds!
+
+**Line 11:** Try Each Column
+```java
+for (int col = 0; col < this.size; col++) {
+```
+- Loops through all columns in current row
+- Example: For 3×3 board, tries col = 0, 1, 2
+
+**Line 12:** Safety Check
+```java
+if (isSafeNQueens(row, col, placedMines) && !this.grid[row][col].isMine()) {
+```
+- **First condition:** `isSafeNQueens(row, col, placedMines)`
+  - Checks if position is safe according to N-Queens rules
+  - Safe = No mine in same row, column, or diagonal
+  
+- **Second condition:** `!this.grid[row][col].isMine()`
+  - Checks if tile doesn't already have a mine
+  - Important: First random mine could be anywhere!
+
+**Lines 14-15:** Place Mine
+```java
+this.grid[row][col].setMine(true);
+placedMines.add(new int[]{row, col});
+```
+- Sets mine at current position
+- Adds position to tracking list
+- Example: Placing mine at row 1, col 2 → `[1, 2]`
+
+**Line 18:** Recursive Call
+```java
+if (placeRemainingMinesNQueens(minesToPlace - 1, row + 1, placedMines)) {
+```
+- Calls itself with:
+  - `minesToPlace - 1` → One less mine to place
+  - `row + 1` → Move to next row
+  - Updated `placedMines` list
+- **Recursion:** Function calls itself to solve smaller problem
+
+**Line 19:** Success Path
+```java
+return true;
+```
+- If recursive call succeeded, pass success up
+
+**Lines 23-24:** Backtracking
+```java
+this.grid[row][col].setMine(false);
+placedMines.remove(placedMines.size() - 1);
+```
+- **When:** Recursive call failed
+- **Action:** Undo the mine placement
+- Removes mine from grid
+- Removes position from list
+- **This is BACKTRACKING!**
+
+**Line 28:** Try Without Placing
+```java
+return placeRemainingMinesNQueens(minesToPlace, row + 1, placedMines);
+```
+- If no column in current row worked
+- Try next row without placing mine in current row
+- Mines don't need to be in every row!
+
+---
+
+#### Step 3: N-Queens Safety Check
+
+```java
+private boolean isSafeNQueens(int row, int col, ArrayList<int[]> placedMines) {
+    for (int[] mine : placedMines) {
+        int placedRow = mine[0];
+        int placedCol = mine[1];
+        
+        // Check if in same row
+        if (placedRow == row) {
+            return false;
+        }
+        
+        // Check if in same column
+        if (placedCol == col) {
+            return false;
+        }
+        
+        // Check if in same diagonal
+        if (Math.abs(placedRow - row) == Math.abs(placedCol - col)) {
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+### Line-by-Line Safety Check Logic:
+
+**Line 2:** Loop Through Placed Mines
+```java
+for (int[] mine : placedMines) {
+```
+- **Enhanced for loop:** Iterates through each mine position
+- `mine` is an array: `[row, column]`
+
+**Lines 3-4:** Extract Coordinates
+```java
+int placedRow = mine[0];
+int placedCol = mine[1];
+```
+- Gets row and column of already-placed mine
+- Example: If mine = `[2, 1]` → placedRow = 2, placedCol = 1
+
+**Lines 7-9:** Same Row Check
+```java
+if (placedRow == row) {
+    return false;
+}
+```
+- **Rule:** No two mines in same row
+- Example: If checking row 2, and mine already in row 2 → NOT SAFE
+
+**Lines 12-14:** Same Column Check
+```java
+if (placedCol == col) {
+    return false;
+}
+```
+- **Rule:** No two mines in same column
+- Example: If checking col 3, and mine already in col 3 → NOT SAFE
+
+**Lines 17-19:** Diagonal Check (THE CLEVER PART!)
+```java
+if (Math.abs(placedRow - row) == Math.abs(placedCol - col)) {
+    return false;
+}
+```
+- **Mathematical Logic:** Two points are on same diagonal if:
+  - Difference in rows = Difference in columns
+  
+- **Example 1:** 
+  - Mine at (1, 2), checking (3, 4)
+  - Row difference: |1 - 3| = 2
+  - Col difference: |2 - 4| = 2
+  - 2 = 2 → On same diagonal! NOT SAFE ❌
+  
+- **Example 2:**
+  - Mine at (0, 1), checking (2, 2)
+  - Row difference: |0 - 2| = 2
+  - Col difference: |1 - 2| = 1
+  - 2 ≠ 1 → NOT on same diagonal! SAFE ✓
+
+**Line 21:** All Checks Passed
+```java
+return true;
+```
+- If none of the checks returned false
+- Position is SAFE for placing mine!
+
+---
+
+### Visual Example: N-Queens Mine Placement
+
+**Example: 3×3 Grid, 3 Mines**
+
+**Step 1: Random mine** (let's say row=1, col=0)
+```
+  1   2   3
+1 [ ][ ][ ]
+2 [X][ ][ ]  ← First mine at (1, 0)
+3 [ ][ ][ ]
+```
+
+**Step 2: N-Queens tries row 0**
+- Tries (0, 0): Same column as (1, 0) → ❌ Not safe
+- Tries (0, 1): Safe! → Places mine ✓
+```
+  1   2   3
+1 [ ][X][ ]  ← Second mine at (0, 1)
+2 [X][ ][ ]
+3 [ ][ ][ ]
+```
+
+**Step 3: N-Queens tries row 1**
+- Already has mine → Skip to row 2
+
+**Step 4: N-Queens tries row 2**
+- Tries (2, 0): Same column as (1, 0) → ❌
+- Tries (2, 1): Same column as (0, 1) → ❌
+- Tries (2, 2): Safe! → Places mine ✓
+```
+  1   2   3
+1 [ ][X][ ]
+2 [X][ ][ ]
+3 [ ][ ][X]  ← Third mine at (2, 2)
+```
+
+**Result:** All 3 mines placed, no two in same row/column/diagonal! ✓
+
+---
+
+### Why Use N-Queens Algorithm?
+
+**Advantages:**
+1. **Strategic Placement** - Mines spread across board
+2. **Fair Gameplay** - Players have better chance to win
+3. **No Clustering** - Mines won't bunch together
+4. **Classic CS Algorithm** - Demonstrates recursion and backtracking
+
+**OOP Concepts Demonstrated:**
+- **Recursion** - Method calls itself
+- **Backtracking** - Undo decisions when they don't work
+- **ArrayList** - Dynamic data structure
+- **Enhanced For Loop** - Iterating through collections
+
+---
+
+#### Algorithm 2: Minimum Distance Method
+
+```java
+private void placeMinesMinDistance() {
+    ArrayList<int[]> placedMines = new ArrayList<>();
+    int minDistance = Math.max(1, size / 3); // Minimum distance between mines
+    
+    if (placeMinesWithMinDistance(mineCount, minDistance, placedMines)) {
+        System.out.println("(Minimum distance between mines: " + minDistance + " tiles)");
+    } else {
+        // Fallback to random if backtracking fails
+        System.out.println("Min distance placement failed, using random...");
+        placeMinesRandom();
+    }
+}
+
+private boolean placeMinesWithMinDistance(int minesToPlace, int minDist, ArrayList<int[]> placedMines) {
+    if (minesToPlace == 0) {
+        return true; // All mines placed successfully
+    }
+    
+    Random random = new Random();
+    int maxAttempts = size * size * 10;
+    
+    // Try random positions
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+        int row = random.nextInt(size);
+        int col = random.nextInt(size);
+        
+        if (!grid[row][col].isMine() && hasMinimumDistance(row, col, placedMines, minDist)) {
+            // Place mine
+            grid[row][col].setMine(true);
+            placedMines.add(new int[]{row, col});
+            
+            // Recursively place remaining mines
+            if (placeMinesWithMinDistance(minesToPlace - 1, minDist, placedMines)) {
+                return true;
+            }
+            
+            // Backtrack if placement didn't work
+            grid[row][col].setMine(false);
+            placedMines.remove(placedMines.size() - 1);
+        }
+    }
+    
+    return false;
+}
+
+private boolean hasMinimumDistance(int row, int col, ArrayList<int[]> placedMines, int minDist) {
+    for (int[] mine : placedMines) {
+        // Manhattan distance: |x1-x2| + |y1-y2|
+        int distance = Math.abs(row - mine[0]) + Math.abs(col - mine[1]);
+        if (distance < minDist) {
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+### Key Concept: Manhattan Distance
+
+**Formula:** `distance = |x1 - x2| + |y1 - y2|`
+
+**Example:**
+- Mine at (1, 2), checking (3, 5)
+- Distance = |1-3| + |2-5| = 2 + 3 = 5 tiles
+
+### Line-by-Line Explanation:
+
+**Line 2:** Calculate minimum distance
+```java
+int minDistance = Math.max(1, size / 3);
+```
+- Divides board size by 3
+- Ensures minimum of 1
+- **Examples:** 3×3 = 1, 6×6 = 2, 9×9 = 3
+
+**Lines 4-6:** Try placement with backtracking
+- Returns true if successful
+- Shows distance used
+
+**Lines 7-10:** Fallback mechanism
+- If algorithm fails (too restrictive)
+- Falls back to random placement
+- Ensures game always starts
+
+**Recursive Logic:**
+- Base case: All mines placed (line 15)
+- Try random positions (line 23-25)
+- Check if valid (line 27)
+- Place and recurse (line 29-33)
+- Backtrack if failed (line 36-37)
+
+**Distance Check:**
+- Calculates Manhattan distance (line 47)
+- Returns false if too close (line 48)
+- Ensures proper spreading
+
+---
+
+#### Algorithm 3: Random Placement Method
+
+```java
+private void placeMinesRandom() {
+    Random random = new Random();
+    int placed = 0;
+    
+    while (placed < mineCount) {
+        int row = random.nextInt(size);
+        int col = random.nextInt(size);
+        
+        if (!grid[row][col].isMine()) {
+            grid[row][col].setMine(true);
+            placed++;
         }
     }
 }
 ```
 
-### Algorithm Explanation:
+### Line-by-Line Explanation:
 
-**Step 1:** Create Random object
-**Step 2:** Initialize counter (`placedMines = 0`)
-**Step 3:** While loop continues until required mines are placed
+**Line 2-3:** Initialize
+- Create Random object
+- Counter starts at 0
 
-**Inside Loop:**
-1. Generate random row (0-4)
-2. Generate random column (0-4)
-3. Check if tile at [row][col] is already a mine
-4. If NOT a mine:
-   - Set it as mine
-   - Increment counter
-5. If already a mine:
-   - Loop continues, generates new coordinates
+**Line 5:** Loop until all mines placed
+```java
+while (placed < mineCount)
+```
 
-### Why This Algorithm?
-- **Ensures unique mine positions** - No duplicate mines
-- **Random distribution** - Fair gameplay
-- **Guaranteed mine count** - Exactly the number player chose
+**Lines 6-7:** Generate random position
+- Random row (0 to size-1)
+- Random column (0 to size-1)
+
+**Lines 9-12:** Place if empty
+- Check tile doesn't have mine
+- Place mine
+- Increment counter
+
+**Why check `!isMine()`?**
+- Prevents duplicate mines at same position
+- Ensures exactly `mineCount` mines placed
+
+---
+
+### Algorithm Comparison
+
+| Feature | N-Queens | Min Distance | Random |
+|---------|----------|--------------|--------|
+| **Complexity** | O(n!) | O(n²) | O(n) |
+| **Spread** | Maximum | Controlled | Variable |
+| **Speed** | Slow | Medium | Fast |
+| **Clustering** | Never | Rare | Possible |
+| **Success Rate** | Medium | High | 100% |
+| **Best For** | Large boards | Medium boards | Small boards |
+
+### Probability of Each Algorithm
+
+Each round, the algorithm is selected with **equal probability**:
+
+| Algorithm | Probability | Frequency |
+|-----------|-------------|-----------|
+| N-Queens | 33.33% | ~1 in 3 games |
+| Minimum Distance | 33.33% | ~1 in 3 games |
+| Random | 33.33% | ~1 in 3 games |
+
+### Example Game Output
+
+```
+Enter bet amount: Rs.100
+Enter number of mines (2-10): 4
+
+Randomly selecting mine placement algorithm...
+Selected: Minimum Distance Algorithm
+(Minimum distance between mines: 1 tiles)
+Placing mines... Done!
+>> Game Started!
+
+      1     2     3     4
+ 1 [ ? ][ ? ][ ? ][ ? ]
+ 2 [ ? ][ ? ][ ? ][ ? ]
+ 3 [ ? ][ ? ][ ? ][ ? ]
+ 4 [ ? ][ ? ][ ? ][ ? ]
+```
 
 ---
 
@@ -1023,13 +1565,13 @@ Error message displayed to user
 private int getMineCount() {
     while (true) {
         try {
-            System.out.print("Enter number of mines (1-10): ");
+            System.out.print("Enter number of mines (2-10): ");
             String input = scanner.nextLine().trim();
             int mines = Integer.parseInt(input);
-            if (mines >= 1 && mines <= 10) {
+            if (mines >= 2 && mines <= 10) {
                 return mines;
             } else {
-                System.out.println("Please enter a number between 1 and 10.");
+                System.out.println("Please enter a number between 2 and 10.");
             }
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Please enter a valid number.");
@@ -1041,15 +1583,201 @@ private int getMineCount() {
 ### Logic:
 1. Infinite loop until valid input
 2. Try to parse input as integer
-3. Check if in range (1-10)
+3. Check if in range (2-10)
 4. If valid → return
 5. If invalid → loop continues
 
 ### Range Validation:
 ```java
-if (mines >= 1 && mines <= 10)
+if (mines >= 2 && mines <= 10)
 ```
-- Ensures game is playable (not too easy or impossible)
+- **Minimum 2 mines** - Ensures game is challenging
+- **Maximum 10 mines** - Prevents board from being too small or impossible
+- Ensures game is balanced (not too easy or too hard)
+
+---
+
+## 🎯 Dynamic Board Sizing Feature
+
+### Key Concept: Board Size = Number of Mines
+
+Our game uses a **dynamic board sizing system** where the grid size automatically adjusts based on the number of mines the player chooses!
+
+### Implementation in playRound() Method:
+
+```java
+// Get number of mines
+numberOfMines = getMineCount();
+
+// Board size = number of mines (3 mines = 3×3, 4 mines = 4×4, etc.)
+int boardSize = numberOfMines;
+
+// Create board with dynamic size
+board = new Board(boardSize, numberOfMines);
+```
+
+### Line-by-Line Explanation:
+
+**Line 1-2:** Get Mine Count
+```java
+numberOfMines = getMineCount();
+```
+- Asks player: "Enter number of mines (2-10):"
+- Validates input (must be 2-10)
+- Stores in `numberOfMines` variable
+
+**Line 5:** Calculate Board Size
+```java
+int boardSize = numberOfMines;
+```
+- **Direct mapping:** Board size equals mine count
+- Simple and elegant relationship!
+
+**Line 8:** Create Dynamic Board
+```java
+board = new Board(boardSize, numberOfMines);
+```
+- Passes both size and mine count to Board constructor
+- Board constructor uses these values:
+```java
+public Board(int size, int mineCount) {
+    this.size = size;
+    this.mineCount = mineCount;
+    this.grid = new Tile[size][size];
+    initializeGrid();
+}
+```
+
+---
+
+### Visual Examples of Dynamic Sizing:
+
+**Example 1: Player chooses 2 mines**
+- Board size = 2
+- Creates 2×2 grid (4 total tiles)
+- 2 tiles have mines
+- 2 tiles have diamonds
+```
+  1   2
+1 [?][?]
+2 [?][?]
+```
+
+**Example 2: Player chooses 3 mines**
+- Board size = 3
+- Creates 3×3 grid (9 total tiles)
+- 3 tiles have mines
+- 6 tiles have diamonds
+```
+  1   2   3
+1 [?][?][?]
+2 [?][?][?]
+3 [?][?][?]
+```
+
+**Example 3: Player chooses 5 mines**
+- Board size = 5
+- Creates 5×5 grid (25 total tiles)
+- 5 tiles have mines
+- 20 tiles have diamonds
+```
+  1   2   3   4   5
+1 [?][?][?][?][?]
+2 [?][?][?][?][?]
+3 [?][?][?][?][?]
+4 [?][?][?][?][?]
+5 [?][?][?][?][?]
+```
+
+---
+
+### Mathematical Relationship:
+
+For **n** mines:
+- **Board size:** n × n
+- **Total tiles:** n²
+- **Mine tiles:** n
+- **Diamond tiles:** n² - n = n(n - 1)
+
+**Examples:**
+- 2 mines: 2² = 4 tiles, 4-2 = 2 diamonds
+- 3 mines: 3² = 9 tiles, 9-3 = 6 diamonds
+- 5 mines: 5² = 25 tiles, 25-5 = 20 diamonds
+- 10 mines: 10² = 100 tiles, 100-10 = 90 diamonds
+
+---
+
+### Why This Design?
+
+**Advantages:**
+1. **Balanced Difficulty** - More mines = bigger board = more choices
+2. **Scalable Gameplay** - Easy for beginners (2×2), challenging for experts (10×10)
+3. **Fair Odds** - Mine-to-tile ratio stays reasonable
+4. **Dynamic Adaptation** - Game adjusts to player's risk preference
+
+**Game Balance:**
+- **2 mines (2×2):** 50% mine density - Very risky!
+- **3 mines (3×3):** 33% mine density - Challenging
+- **5 mines (5×5):** 20% mine density - Balanced
+- **10 mines (10×10):** 10% mine density - More strategic
+
+---
+
+### How It Affects Other Methods:
+
+**getTileCoordinates() - Dynamic Input Validation:**
+```java
+private int[] getTileCoordinates() {
+    int maxSize = board.getSize();  // Gets current board size
+    while (true) {
+        try {
+            System.out.print("Enter row and column (1-" + maxSize + "): ");
+            // ... validation code ...
+            if (row >= 1 && row <= maxSize && col >= 1 && col <= maxSize) {
+                return new int[]{row, col};
+            }
+        }
+    }
+}
+```
+- Prompt changes based on board size
+- For 3×3: "Enter row and column (1-3):"
+- For 5×5: "Enter row and column (1-5):"
+- Validation adjusts automatically!
+
+**displayBoard() - Dynamic Headers:**
+```java
+public void displayBoard() {
+    System.out.print("\n   ");
+    for (int i = 1; i <= size; i++) {
+        System.out.print(String.format("%4d  ", i));
+    }
+    // ... rest of display code ...
+}
+```
+- Column headers adjust to board size
+- Spacing formatted dynamically
+- Works for any size from 2×2 to 10×10
+
+---
+
+### Complete Flow Example:
+
+**Player enters 4 mines:**
+1. `getMineCount()` returns 4
+2. `boardSize = 4` (calculated)
+3. `new Board(4, 4)` creates 4×4 grid
+4. `initializeGrid()` creates 16 Tile objects
+5. `placeMines()` places 4 mines using N-Queens
+6. `displayBoard()` shows 4×4 grid with headers "1 2 3 4"
+7. `getTileCoordinates()` prompts "Enter row and column (1-4):"
+8. Player has 12 diamond tiles to find, avoiding 4 mines!
+
+**OOP Concepts Used:**
+- **Parameterized Constructor** - Passing dynamic values
+- **Encapsulation** - Board manages its own size
+- **Method Communication** - Methods share size information
+- **Dynamic Array Creation** - `new Tile[size][size]`
 
 ---
 

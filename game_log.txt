@@ -1,1 +1,16 @@
 Sun Oct 26 19:39:46 IST 2025 | LOSS | Bet: Rs.80.00 | Winnings: Rs.0.00 | Balance: Rs.920.00
+Thu Oct 30 11:09:10 IST 2025 | WIN | Bet: Rs.1000.00 | Winnings: Rs.1250.00 | Balance: Rs.1250.00
+Thu Oct 30 11:09:45 IST 2025 | WIN | Bet: Rs.1250.00 | Winnings: Rs.1875.00 | Balance: Rs.1875.00
+Thu Oct 30 11:11:48 IST 2025 | WIN | Bet: Rs.200.00 | Winnings: Rs.400.00 | Balance: Rs.1200.00
+Thu Oct 30 11:12:05 IST 2025 | LOSS | Bet: Rs.1200.00 | Winnings: Rs.0.00 | Balance: Rs.0.00
+Thu Oct 30 14:50:57 IST 2025 | LOSS | Bet: Rs.1000.00 | Winnings: Rs.0.00 | Balance: Rs.0.00
+Thu Oct 30 15:21:41 IST 2025 | LOSS | Bet: Rs.200.00 | Winnings: Rs.0.00 | Balance: Rs.800.00
+Fri Oct 31 09:37:12 IST 2025 | WIN | Bet: Rs.30.00 | Winnings: Rs.37.50 | Balance: Rs.1007.50
+Fri Oct 31 09:51:57 IST 2025 | LOSS | Bet: Rs.300.00 | Winnings: Rs.0.00 | Balance: Rs.700.00
+Fri Oct 31 09:53:52 IST 2025 | LOSS | Bet: Rs.20.00 | Winnings: Rs.0.00 | Balance: Rs.980.00
+Fri Oct 31 09:54:02 IST 2025 | LOSS | Bet: Rs.20.00 | Winnings: Rs.0.00 | Balance: Rs.960.00
+Fri Oct 31 09:55:35 IST 2025 | LOSS | Bet: Rs.20.00 | Winnings: Rs.0.00 | Balance: Rs.980.00
+Fri Oct 31 09:59:04 IST 2025 | LOSS | Bet: Rs.300.00 | Winnings: Rs.0.00 | Balance: Rs.700.00
+Fri Oct 31 09:59:15 IST 2025 | LOSS | Bet: Rs.20.00 | Winnings: Rs.0.00 | Balance: Rs.680.00
+Fri Oct 31 09:59:27 IST 2025 | LOSS | Bet: Rs.50.00 | Winnings: Rs.0.00 | Balance: Rs.630.00
+Fri Oct 31 10:02:34 IST 2025 | LOSS | Bet: Rs.40.00 | Winnings: Rs.0.00 | Balance: Rs.960.00

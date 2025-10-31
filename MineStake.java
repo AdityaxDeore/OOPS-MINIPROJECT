@@ -1,17 +1,13 @@
-import java.util.*;
 import java.io.*;
+import java.util.*;
 
-// ============================================================
 // INTERFACE - Playable
-// ============================================================
 interface Playable {
     void startGame();
     void endGame();
 }
 
-// ============================================================
 // CUSTOM EXCEPTIONS
-// ============================================================
 class InvalidBetException extends Exception {
     public InvalidBetException(String message) {
         super(message);
@@ -24,9 +20,7 @@ class InsufficientBalanceException extends Exception {
     }
 }
 
-// ============================================================
 // TILE CLASS - Represents individual grid cells
-// ============================================================
 class Tile {
     private boolean isMine;
     private boolean isRevealed;
@@ -69,9 +63,7 @@ class Tile {
     }
 }
 
-// ============================================================
 // PLAYER CLASS
-// ============================================================
 class Player {
     private String name;
     private double balance;
@@ -121,9 +113,7 @@ class Player {
     }
 }
 
-// ============================================================
 // BOARD CLASS
-// ============================================================
 class Board {
     private Tile[][] grid;
     private int size;
@@ -154,27 +144,186 @@ class Board {
         }
     }
 
-    // Place mines randomly
+    // Place mines using N-Queens approach
     public void placeMines() {
         Random random = new Random();
-        int placedMines = 0;
-
-        while (placedMines < this.mineCount) {
-            int row = random.nextInt(this.size);
-            int col = random.nextInt(this.size);
-
-            if (!this.grid[row][col].isMine()) {
+        int choice = random.nextInt(3) + 1; // Randomly select 1, 2, or 3
+        
+        System.out.println("\nRandomly selecting mine placement algorithm...");
+        
+        switch (choice) {
+            case 1:
+                System.out.println("Selected: N-Queens Algorithm");
+                placeMinesNQueens();
+                break;
+            case 2:
+                System.out.println("Selected: Minimum Distance Algorithm");
+                placeMinesMinDistance();
+                break;
+            case 3:
+                System.out.println("Selected: Random Placement");
+                placeMinesRandom();
+                break;
+        }
+    }
+    
+    // METHOD 1: N-Queens Algorithm
+    private void placeMinesNQueens() {
+        Random random = new Random();
+        
+        // Step 1: Place first mine randomly
+        int firstRow = random.nextInt(this.size);
+        int firstCol = random.nextInt(this.size);
+        this.grid[firstRow][firstCol].setMine(true);
+        
+        // Step 2: Use N-Queens algorithm for remaining mines
+        int remainingMines = this.mineCount - 1;
+        ArrayList<int[]> placedMines = new ArrayList<>();
+        placedMines.add(new int[]{firstRow, firstCol});
+        placeRemainingMinesNQueens(remainingMines, 0, placedMines);
+    }
+    
+    // N-Queens recursive backtracking algorithm
+    private boolean placeRemainingMinesNQueens(int minesToPlace, int row, ArrayList<int[]> placedMines) {
+        if (minesToPlace == 0) {
+            return true; // All mines placed successfully
+        }
+        
+        if (row >= this.size) {
+            return false; // Reached end of board, backtrack
+        }
+        
+        // Try placing mine in each column of current row
+        for (int col = 0; col < this.size; col++) {
+            if (isSafeNQueens(row, col, placedMines) && !this.grid[row][col].isMine()) {
+                // Place mine
                 this.grid[row][col].setMine(true);
-                placedMines++;
+                placedMines.add(new int[]{row, col});
+                
+                // Recursively place remaining mines
+                if (placeRemainingMinesNQueens(minesToPlace - 1, row + 1, placedMines)) {
+                    return true;
+                }
+                
+                // Backtrack if placement didn't work
+                this.grid[row][col].setMine(false);
+                placedMines.remove(placedMines.size() - 1);
+            }
+        }
+        
+        // Try next row without placing in current row
+        return placeRemainingMinesNQueens(minesToPlace, row + 1, placedMines);
+    }
+    
+    // Check if position is safe according to N-Queens rules
+    private boolean isSafeNQueens(int row, int col, ArrayList<int[]> placedMines) {
+        for (int[] mine : placedMines) {
+            int placedRow = mine[0];
+            int placedCol = mine[1];
+            
+            // Check if in same row
+            if (placedRow == row) {
+                return false;
+            }
+            
+            // Check if in same column
+            if (placedCol == col) {
+                return false;
+            }
+            
+            // Check if in same diagonal
+            if (Math.abs(placedRow - row) == Math.abs(placedCol - col)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // METHOD 2: Minimum Distance Algorithm
+    private void placeMinesMinDistance() {
+        ArrayList<int[]> placedMines = new ArrayList<>();
+        int minDistance = Math.max(1, size / 3); // Minimum distance between mines
+        
+        if (placeMinesWithMinDistance(mineCount, minDistance, placedMines)) {
+            System.out.println("(Minimum distance between mines: " + minDistance + " tiles)");
+        } else {
+            // Fallback to random if backtracking fails
+            System.out.println("Min distance placement failed, using random...");
+            placeMinesRandom();
+        }
+    }
+    
+    private boolean placeMinesWithMinDistance(int minesToPlace, int minDist, ArrayList<int[]> placedMines) {
+        if (minesToPlace == 0) {
+            return true; // All mines placed successfully
+        }
+        
+        Random random = new Random();
+        int maxAttempts = size * size * 10;
+        
+        // Try random positions
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            int row = random.nextInt(size);
+            int col = random.nextInt(size);
+            
+            if (!grid[row][col].isMine() && hasMinimumDistance(row, col, placedMines, minDist)) {
+                // Place mine
+                grid[row][col].setMine(true);
+                placedMines.add(new int[]{row, col});
+                
+                // Recursively place remaining mines
+                if (placeMinesWithMinDistance(minesToPlace - 1, minDist, placedMines)) {
+                    return true;
+                }
+                
+                // Backtrack if placement didn't work
+                grid[row][col].setMine(false);
+                placedMines.remove(placedMines.size() - 1);
+            }
+        }
+        
+        return false;
+    }
+    
+    private boolean hasMinimumDistance(int row, int col, ArrayList<int[]> placedMines, int minDist) {
+        for (int[] mine : placedMines) {
+            // Manhattan distance: |x1-x2| + |y1-y2|
+            int distance = Math.abs(row - mine[0]) + Math.abs(col - mine[1]);
+            if (distance < minDist) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // METHOD 3: Random Placement
+    private void placeMinesRandom() {
+        Random random = new Random();
+        int placed = 0;
+        
+        while (placed < mineCount) {
+            int row = random.nextInt(size);
+            int col = random.nextInt(size);
+            
+            if (!grid[row][col].isMine()) {
+                grid[row][col].setMine(true);
+                placed++;
             }
         }
     }
 
     // Display the board
     public void displayBoard() {
-        System.out.println("\n  1   2   3   4   5");
+        // Print column headers
+        System.out.print("\n   ");
+        for (int i = 1; i <= size; i++) {
+            System.out.print(String.format("%4d  ", i));
+        }
+        System.out.println();
+        
+        // Print rows
         for (int i = 0; i < size; i++) {
-            System.out.print((i + 1) + " ");
+            System.out.print(String.format("%2d ", (i + 1)));
             for (int j = 0; j < size; j++) {
                 char display = this.grid[i][j].getDisplayChar();
                 System.out.print("[ " + display + " ]");
@@ -202,9 +351,7 @@ class Board {
     }
 }
 
-// ============================================================
 // THREAD 1 - Loading Animation (extends Thread)
-// ============================================================
 class LoadingThread extends Thread {
     private String message;
 
@@ -228,9 +375,7 @@ class LoadingThread extends Thread {
     }
 }
 
-// ============================================================
 // THREAD 2 - Status Updates (implements Runnable)
-// ============================================================
 class StatusUpdateRunnable implements Runnable {
     private String status;
 
@@ -249,9 +394,7 @@ class StatusUpdateRunnable implements Runnable {
     }
 }
 
-// ============================================================
 // ABSTRACT BASE CLASS - AbstractGame (INHERITANCE)
-// ============================================================
 abstract class AbstractGame {
     protected Player player;
     protected Scanner scanner;
@@ -270,9 +413,7 @@ abstract class AbstractGame {
     }
 }
 
-// ============================================================
 // MINESTAKE GAME CLASS - POLYMORPHISM (method overriding)
-// ============================================================
 class MineStakeGame extends AbstractGame implements Playable {
     private Board board;
     private double currentBet;
@@ -329,6 +470,9 @@ class MineStakeGame extends AbstractGame implements Playable {
 
         // Get number of mines
         numberOfMines = getMineCount();
+        
+        // Board size = number of mines (3 mines = 3×3, 4 mines = 4×4, etc.)
+        int boardSize = numberOfMines;
 
         // Deduct bet from balance
         player.deductBalance(currentBet);
@@ -343,7 +487,7 @@ class MineStakeGame extends AbstractGame implements Playable {
             System.out.println("Loading was interrupted");
         }
 
-        board = new Board(5, numberOfMines);
+        board = new Board(boardSize, numberOfMines);
         board.placeMines();
 
         // Start status update thread
@@ -436,13 +580,13 @@ class MineStakeGame extends AbstractGame implements Playable {
     private int getMineCount() {
         while (true) {
             try {
-                System.out.print("Enter number of mines (1-10): ");
+                System.out.print("Enter number of mines (2-10): ");
                 String input = scanner.nextLine().trim();
                 int mines = Integer.parseInt(input);
-                if (mines >= 1 && mines <= 10) {
+                if (mines >= 2 && mines <= 10) {
                     return mines;
                 } else {
-                    System.out.println("Please enter a number between 1 and 10.");
+                    System.out.println("Please enter a number between 2 and 10.");
                 }
             } catch (NumberFormatException e) {
                 System.out.println("Invalid input. Please enter a valid number.");
@@ -452,9 +596,10 @@ class MineStakeGame extends AbstractGame implements Playable {
 
     // Helper method to get tile coordinates
     private int[] getTileCoordinates() {
+        int maxSize = board.getSize();
         while (true) {
             try {
-                System.out.print("Enter row and column (1-5): ");
+                System.out.print("Enter row and column (1-" + maxSize + "): ");
                 String input = scanner.nextLine().trim();
                 String[] parts = input.split(" ");
                 
@@ -466,10 +611,10 @@ class MineStakeGame extends AbstractGame implements Playable {
                 int row = Integer.parseInt(parts[0]);
                 int col = Integer.parseInt(parts[1]);
 
-                if (row >= 1 && row <= 5 && col >= 1 && col <= 5) {
+                if (row >= 1 && row <= maxSize && col >= 1 && col <= maxSize) {
                     return new int[]{row, col};
                 } else {
-                    System.out.println("Please enter numbers between 1 and 5.");
+                    System.out.println("Please enter numbers between 1 and " + maxSize + ".");
                 }
             } catch (NumberFormatException e) {
                 System.out.println("Invalid input. Please enter valid numbers.");
@@ -560,9 +705,7 @@ class MineStakeGame extends AbstractGame implements Playable {
     }
 }
 
-// ============================================================
 // MAIN CLASS
-// ============================================================
 public class MineStake {
     public static void main(String[] args) {
         // Create player with default constructor
